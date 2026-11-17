@@ -1,0 +1,41 @@
+{
+  "audit_name": "MOEX Data Quality Audit 2005-2024",
+  "period_start": "2005-01-01",
+  "period_end": "2024-12-31",
+  "generated_at_utc": "2026-11-17T18:59:23.872923+00:00",
+  "database_modified": false,
+  "cleaning_performed": false,
+  "rows": 604017,
+  "unique_tickers": 371,
+  "unique_boards": 2,
+  "observed_market_dates": 5020,
+  "unique_ticker_dates": 602695,
+  "active_trade_rows": 525880,
+  "zero_trade_rows": 78137,
+  "duplicate_ticker_board_date_groups": 0,
+  "cross_board_comparison_groups": 1322,
+  "cross_board_groups_with_differences": 1322,
+  "incomplete_history_candidates": 20,
+  "gap_intervals_ge_5_observed_dates": 28,
+  "data_quality_flag_rows": 234485,
+  "flags_by_type": {
+    "zero_trades": 78137,
+    "zero_volume": 78137,
+    "missing_ohlc": 78138,
+    "traded_with_missing_ohlc": 1,
+    "large_change_between_active_observations": 72
+  },
+  "rows_by_board": {
+    "TQBR": 562198,
+    "EQBR": 41819
+  },
+  "methodological_notes": [
+    "All raw rows are preserved.",
+    "No values were corrected or deleted.",
+    "Cross-board records are not automatically duplicates.",
+    "Observed database dates are a proxy, not an official MOEX calendar.",
+    "Large price changes are investigation candidates, not proven errors.",
+    "No-trade rows are retained and classified separately.",
+    "Corporate actions are not automatically adjusted."
+  ]
+}

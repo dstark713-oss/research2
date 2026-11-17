@@ -1,0 +1,20 @@
+{
+  "period": [
+    "2005-01-01",
+    "2024-12-31"
+  ],
+  "rows": 604017,
+  "cross_board_groups": 1322,
+  "cross_board_activity": {
+    "EQBR_ONLY_ACTIVE": 508,
+    "BOTH_ACTIVE": 814
+  },
+  "no_trade_patterns": {
+    "ALL_OHLC_NULL": 78137
+  },
+  "no_trade_positive_close_rows": 0,
+  "large_changes_ge_50pct": 72,
+  "active_trades_with_incomplete_ohlc": 1,
+  "database_modified": false,
+  "cleaning_performed": false
+}

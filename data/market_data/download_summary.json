@@ -1,0 +1,37 @@
+{
+  "raw_rows": 727840,
+  "unique_secids": 417,
+  "boards": 2,
+  "min_tradedate": "1997-03-24",
+  "max_tradedate": "2026-11-16",
+  "rows_by_board": {
+    "EQBR": 65844,
+    "TQBR": 661996
+  },
+  "rows_by_tradingsession": {
+    "3": 727840
+  },
+  "jobs_by_status": {
+    "complete": 3247
+  },
+  "database": "data\\market_data\\moex_daily_raw.sqlite",
+  "allowed_boards": [
+    "EQBR",
+    "TQBR"
+  ],
+  "requested_from": "1997-03-24",
+  "requested_till": "2026-11-17",
+  "jobs_total": 3247,
+  "jobs_complete_this_run": 3247,
+  "jobs_skipped_this_run": 0,
+  "jobs_error_this_run": 0,
+  "new_rows_inserted_this_run": 727840,
+  "notes": [
+    "Raw rows are preserved separately for each board.",
+    "No price cleaning or row deletion is performed.",
+    "Rows are deduplicated only by identical raw content and board identity.",
+    "Different boards and trading sessions remain separate observations.",
+    "download_jobs stores resumable progress by security, board and year.",
+    "history_from/history_till are data availability boundaries, not legal listing dates."
+  ]
+}
