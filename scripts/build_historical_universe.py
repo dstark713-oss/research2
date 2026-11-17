@@ -11,6 +11,7 @@ import csv
 import json
 import logging
 import os
+import ssl
 import sys
 import time
 from collections import defaultdict
@@ -32,10 +33,23 @@ class ISSAccessError(RuntimeError):
     pass
 
 
+class ISSCertificateError(RuntimeError):
+    pass
+
+
 class ISSClient:
-    def __init__(self, delay: float = 0.15, retries: int = 5) -> None:
+    def __init__(
+        self,
+        delay: float = 0.15,
+        retries: int = 5,
+        ca_bundle: str | None = None,
+    ) -> None:
         self.delay = delay
         self.retries = retries
+        # By default use the operating system trust store. On Windows this
+        # includes certificates installed in the Windows certificate stores.
+        # SSL_CERT_FILE or --ca-bundle can provide an explicit PEM CA bundle.
+        self.ssl_context = ssl.create_default_context(cafile=ca_bundle or None)
 
     def get_json(self, path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         query = {"iss.meta": "off", **(params or {})}
@@ -44,7 +58,7 @@ class ISSClient:
         for attempt in range(self.retries):
             request = Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json"})
             try:
-                with urlopen(request, timeout=40) as response:
+                with urlopen(request, timeout=40, context=self.ssl_context) as response:
                     payload = json.loads(response.read().decode("utf-8"))
                 time.sleep(self.delay)
                 return payload
@@ -57,7 +71,17 @@ class ISSClient:
                 if exc.code not in (429, 500, 502, 503, 504):
                     raise
                 last_error = exc
-            except (URLError, TimeoutError, json.JSONDecodeError) as exc:
+            except URLError as exc:
+                reason = getattr(exc, "reason", None)
+                if isinstance(reason, ssl.SSLCertVerificationError):
+                    raise ISSCertificateError(
+                        "TLS certificate verification failed. Python cannot build a trusted "
+                        "certificate chain for iss.moex.com. Update the Windows root certificate "
+                        "store, check HTTPS inspection/proxy software, or pass a trusted PEM CA "
+                        "bundle with --ca-bundle (or SSL_CERT_FILE). SSL verification remains enabled."
+                    ) from exc
+                last_error = exc
+            except (TimeoutError, json.JSONDecodeError) as exc:
                 last_error = exc
             time.sleep(min(2 ** attempt, 20))
         raise RuntimeError(f"ISS request failed after {self.retries} attempts: {url}") from last_error
@@ -129,12 +153,13 @@ def main() -> int:
     parser.add_argument("--to-date", default=date.today().isoformat(), help="Upper date bound YYYY-MM-DD")
     parser.add_argument("--output-dir", default="data/raw/moex_iss/universe")
     parser.add_argument("--delay", type=float, default=0.15, help="Delay between ISS requests")
+    parser.add_argument("--ca-bundle", default=os.environ.get("SSL_CERT_FILE"), help="Trusted PEM CA bundle; defaults to the OS trust store")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    client = ISSClient(delay=args.delay)
+    client = ISSClient(delay=args.delay, ca_bundle=args.ca_bundle)
 
     try:
         logging.info("Requesting historical trading-date calendar from ISS")
@@ -270,6 +295,9 @@ def main() -> int:
         )
         logging.info("Universe build completed: %s", json.dumps(summary, ensure_ascii=False))
         return 0
+    except ISSCertificateError as exc:
+        logging.error("%s", exc)
+        return 4
     except ISSAccessError as exc:
         logging.error("%s", exc)
         return 2
