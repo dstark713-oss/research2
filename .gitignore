@@ -10,8 +10,10 @@ data/interim/
 data/processed/
 *.sqlite
 *.parquet
+*.csv
 
 *.png
 
 .env
 .env.*
+*.csv

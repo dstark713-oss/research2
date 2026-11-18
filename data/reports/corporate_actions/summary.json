@@ -1,0 +1,106 @@
+{
+  "run_timestamp_utc": "2026-11-18T19:09:50.480635",
+  "source_database": "data\\market_data\\moex_daily_raw.sqlite",
+  "output_database": "data\\market_data\\moex_daily_adjusted.sqlite",
+  "source_table": "daily_bars_raw",
+  "output_table": "adjusted_daily_bars",
+  "source_rows": 727840,
+  "output_rows": 727840,
+  "rows_processed": 727840,
+  "row_counts_match": true,
+  "sqlite_integrity_check": "ok",
+  "adjustment_status_counts": {
+    "UNADJUSTED_NO_ACTION": 706477,
+    "ADJUSTED": 14445,
+    "QUARANTINED_MIXED_SCALE": 1,
+    "POST_ACTION_NATIVE_SCALE": 6917
+  },
+  "corporate_action_row_counts": {
+    "BELU_2024_1_TO_8": 2356,
+    "GEMA_2024_1_TO_10": 1854,
+    "GMKN_2024_1_TO_100": 3467,
+    "IRAO_2015_100_TO_1": 3817,
+    "PLZL_2025_1_TO_10": 3146,
+    "ROLO_2023_1_TO_10": 3146,
+    "VTBR_2024_5000_TO_1": 3577
+  },
+  "corporate_actions": [
+    {
+      "action_id": "VTBR_2024_5000_TO_1",
+      "secid": "VTBR",
+      "ratio": "5000:1",
+      "effective_date": "2024-07-15",
+      "status": "APPLY",
+      "historical_rows_adjusted": 2980,
+      "effective_date_rows_quarantined": 0,
+      "post_action_rows_unadjusted": 597
+    },
+    {
+      "action_id": "IRAO_2015_100_TO_1",
+      "secid": "IRAO",
+      "ratio": "100:1",
+      "effective_date": "2015-01-20",
+      "status": "APPLY",
+      "historical_rows_adjusted": 825,
+      "effective_date_rows_quarantined": 0,
+      "post_action_rows_unadjusted": 2992
+    },
+    {
+      "action_id": "GMKN_2024_1_TO_100",
+      "secid": "GMKN",
+      "ratio": "1:100",
+      "effective_date": "2024-04-08",
+      "status": "APPLY",
+      "historical_rows_adjusted": 2802,
+      "effective_date_rows_quarantined": 0,
+      "post_action_rows_unadjusted": 665
+    },
+    {
+      "action_id": "ROLO_2023_1_TO_10",
+      "secid": "ROLO",
+      "ratio": "1:10",
+      "effective_date": "2023-01-19",
+      "status": "APPLY",
+      "historical_rows_adjusted": 2173,
+      "effective_date_rows_quarantined": 0,
+      "post_action_rows_unadjusted": 973
+    },
+    {
+      "action_id": "GEMA_2024_1_TO_10",
+      "secid": "GEMA",
+      "ratio": "1:10",
+      "effective_date": "2024-02-08",
+      "status": "APPLY",
+      "historical_rows_adjusted": 1149,
+      "effective_date_rows_quarantined": 0,
+      "post_action_rows_unadjusted": 705
+    },
+    {
+      "action_id": "PLZL_2025_1_TO_10",
+      "secid": "PLZL",
+      "ratio": "1:10",
+      "effective_date": "2025-03-27",
+      "status": "APPLY",
+      "historical_rows_adjusted": 2729,
+      "effective_date_rows_quarantined": 0,
+      "post_action_rows_unadjusted": 417
+    },
+    {
+      "action_id": "BELU_2024_1_TO_8",
+      "secid": "BELU",
+      "ratio": "1:8",
+      "effective_date": "2024-08-22",
+      "status": "SPECIAL_HANDLING",
+      "historical_rows_adjusted": 1787,
+      "effective_date_rows_quarantined": 1,
+      "post_action_rows_unadjusted": 568
+    }
+  ],
+  "raw_database_modified": false,
+  "raw_database_opened_read_only": true,
+  "price_adjustments_applied_only_to_confirmed_actions": true,
+  "unconfirmed_actions_adjusted": [],
+  "belu_effective_date_bar_quarantined": true,
+  "automatic_outlier_removal": false,
+  "forward_fill_applied": false
+}

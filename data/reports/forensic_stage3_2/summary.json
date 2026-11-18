@@ -1,0 +1,35 @@
+{
+  "events": 69,
+  "classifications": {
+    "CORPORATE_ACTION_CONFIRMED": 6,
+    "REAL_ILLIQUID_MOVE": 4,
+    "UNRESOLVED": 53,
+    "REAL_MARKET_MOVE": 6
+  },
+  "event_treatments": {
+    "CORPORATE_ACTION_ADJUSTMENT": 5,
+    "MANUAL_REVIEW_REQUIRED": 14,
+    "UNASSESSED": 50
+  },
+  "review_statuses": {
+    "PRELIMINARY_CONFIRMED": 5,
+    "PRELIMINARY_USER_CONFIRMED": 10,
+    "UNREVIEWED": 50,
+    "SOURCE_DATE_CONFLICT": 1,
+    "NEEDS_PRICE_SCALE_REVIEW": 1,
+    "NEEDS_SOURCE_CHECK": 2
+  },
+  "exclude_from_returns": {
+    "UNASSESSED": 69
+  },
+  "universe_actions": {
+    "NO_DECISION": 69
+  },
+  "input_file": "C:\\Users\\Danil\\Desktop\\research2\\data\\reports\\forensic_stage3_1\\event_summary.csv",
+  "output_file": "C:\\Users\\Danil\\Desktop\\research2\\data\\reports\\forensic_stage3_2\\event_decision_register.csv",
+  "final_manual_decisions_preserved": 0,
+  "raw_database_modified": false,
+  "price_adjustments_applied": false,
+  "automatic_return_exclusions": 0,
+  "automatic_universe_exclusions": 0
+}

@@ -1,0 +1,55 @@
+{
+  "audit": "Adjusted MOEX daily data quality audit",
+  "period": {
+    "start_date": "2005-01-01",
+    "end_date": "2024-12-31",
+    "observed_market_dates": 5020,
+    "first_observed_date": "2005-01-11",
+    "last_observed_date": "2024-12-30"
+  },
+  "database": "data\\market_data\\moex_daily_adjusted.sqlite",
+  "database_integrity_check": "ok",
+  "excluded_tickers": [
+    "GAZC",
+    "GAZS",
+    "GAZT"
+  ],
+  "raw_database_modified": false,
+  "adjusted_database_modified": false,
+  "automatic_price_corrections": false,
+  "automatic_row_deletions": false,
+  "forward_fill_applied": false,
+  "winsorization_applied": false,
+  "large_return_threshold_pct": 50.0,
+  "large_return_threshold_is_not_an_error_rule": true,
+  "market_calendar_limitation": "Distinct dates observed in the database are used as a proxy. This is not an independently verified official MOEX calendar.",
+  "data_quality_flags": {
+    "rows_scanned": 596004,
+    "flag_counts": {
+      "QUARANTINED_CORPORATE_ACTION": 1,
+      "ACTIVE_MISSING_OHLC": 1
+    },
+    "total_flag_rows": 2,
+    "output_file": "data\\reports\\adjusted_data_quality_2005_2024\\data_quality_flags.csv"
+  },
+  "ticker_coverage": {
+    "ticker_count": 368,
+    "output_file": "data\\reports\\adjusted_data_quality_2005_2024\\ticker_coverage.csv"
+  },
+  "large_return_events": {
+    "threshold_abs_return_pct": 50.0,
+    "events": 63,
+    "event_type_counts": {
+      "ONE_OBSERVED_SESSION": 33,
+      "MULTI_SESSION_GAP": 30
+    },
+    "market_calendar_proxy": "Distinct tradedates observed in adjusted database",
+    "output_file": "data\\reports\\adjusted_data_quality_2005_2024\\large_return_events.csv"
+  },
+  "cross_board_comparison": {
+    "cross_board_active_pairs": 814,
+    "comparable_close_pairs": 814,
+    "pairs_with_missing_close": 0,
+    "output_file": "data\\reports\\adjusted_data_quality_2005_2024\\cross_board_duplicates.csv"
+  }
+}

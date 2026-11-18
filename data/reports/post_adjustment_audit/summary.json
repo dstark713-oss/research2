@@ -1,0 +1,74 @@
+{
+  "row_formula_audit": {
+    "rows_checked": 727840,
+    "quarantined_rows": 1,
+    "formula_errors": {}
+  },
+  "unchanged_fields_audit": {
+    "joined_rows_checked": 727840,
+    "raw_rows": 727840,
+    "adjusted_rows": 727840,
+    "row_counts_match": true,
+    "unchanged_field_errors": {}
+  },
+  "ohlc_audit": {
+    "rows_checked": 727839,
+    "ohlc_violation_count": 7,
+    "examples": [
+      {
+        "secid": "RU0008926621",
+        "boardid": "EQBR",
+        "tradedate": "1997-05-28",
+        "error": "OHLC_CONTAINMENT_VIOLATION",
+        "status": "UNADJUSTED_NO_ACTION"
+      },
+      {
+        "secid": "RU0008943394",
+        "boardid": "EQBR",
+        "tradedate": "1997-03-24",
+        "error": "OHLC_CONTAINMENT_VIOLATION",
+        "status": "UNADJUSTED_NO_ACTION"
+      },
+      {
+        "secid": "RU0008943394",
+        "boardid": "EQBR",
+        "tradedate": "1997-03-31",
+        "error": "OHLC_CONTAINMENT_VIOLATION",
+        "status": "UNADJUSTED_NO_ACTION"
+      },
+      {
+        "secid": "RU0008958863",
+        "boardid": "EQBR",
+        "tradedate": "1997-03-24",
+        "error": "OHLC_CONTAINMENT_VIOLATION",
+        "status": "UNADJUSTED_NO_ACTION"
+      },
+      {
+        "secid": "RU0008958863",
+        "boardid": "EQBR",
+        "tradedate": "1998-05-19",
+        "error": "OHLC_CONTAINMENT_VIOLATION",
+        "status": "UNADJUSTED_NO_ACTION"
+      },
+      {
+        "secid": "RU0008960828",
+        "boardid": "EQBR",
+        "tradedate": "1998-06-15",
+        "error": "OHLC_CONTAINMENT_VIOLATION",
+        "status": "UNADJUSTED_NO_ACTION"
+      },
+      {
+        "secid": "RU0009004642",
+        "boardid": "EQBR",
+        "tradedate": "1997-03-24",
+        "error": "OHLC_CONTAINMENT_VIOLATION",
+        "status": "UNADJUSTED_NO_ACTION"
+      }
+    ]
+  },
+  "boundary_rows_written": 20,
+  "boundary_file": "data\\reports\\post_adjustment_audit\\corporate_action_boundaries.csv",
+  "raw_database_modified": false,
+  "adjusted_database_modified": false,
+  "interpretation": "Boundary jumps require manual interpretation. A large residual change is not automatically a data error."
+}

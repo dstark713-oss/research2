@@ -1,0 +1,34 @@
+{
+  "source_database": "C:\\Users\\Danil\\Desktop\\research2\\data\\market_data\\moex_daily_raw.sqlite",
+  "source_events": 72,
+  "events_excluded_by_ticker": 3,
+  "events_for_review": 69,
+  "events_ready_for_review": 69,
+  "events_not_found_or_invalid": 0,
+  "excluded_tickers": [
+    "GAZC",
+    "GAZS",
+    "GAZT"
+  ],
+  "context_rows": 5165,
+  "context_rows_by_role": {
+    "CONTEXT": 5014,
+    "PREVIOUS_EVENT_OBSERVATION": 69,
+    "CURRENT_EVENT_OBSERVATION": 69,
+    "OTHER_BOARD": 13
+  },
+  "context_rows_by_board": {
+    "TQBR": 5110,
+    "EQBR": 55
+  },
+  "active_context_before": 5,
+  "active_context_after": 5,
+  "raw_database_modified": false,
+  "outputs": [
+    "event_context.csv",
+    "review_queue.csv",
+    "excluded_tickers.csv",
+    "events_not_found.csv",
+    "summary.json"
+  ]
+}

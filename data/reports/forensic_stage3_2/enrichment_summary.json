@@ -1,0 +1,18 @@
+{
+  "events": 69,
+  "analyst_notes_added": 38,
+  "events_without_additional_notes": 31,
+  "unmatched_note_ids": [],
+  "classifications_unchanged": {
+    "CORPORATE_ACTION_CONFIRMED": 6,
+    "REAL_ILLIQUID_MOVE": 4,
+    "UNRESOLVED": 53,
+    "REAL_MARKET_MOVE": 6
+  },
+  "input_file": "C:\\Users\\Danil\\Desktop\\research2\\data\\reports\\forensic_stage3_2\\event_decision_register.csv",
+  "output_file": "C:\\Users\\Danil\\Desktop\\research2\\data\\reports\\forensic_stage3_2\\event_decision_register_enriched.csv",
+  "source_register_modified": false,
+  "price_adjustments_applied": false,
+  "return_exclusions_applied": false,
+  "universe_exclusions_applied": false
+}

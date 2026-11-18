@@ -1,0 +1,24 @@
+{
+  "source_events": 72,
+  "events_excluded_by_ticker": 3,
+  "events_ready_for_review": 69,
+  "events_not_ready": 0,
+  "endpoint_context_rows": 1458,
+  "context_design": "Independent active-observation windows around previous and current event endpoints",
+  "active_observations_before": 5,
+  "active_observations_after": 5,
+  "scale_factor_fit_counts": {
+    "APPROXIMATE": 15,
+    "WEAK": 48,
+    "CLOSE": 6
+  },
+  "scale_factors_are_diagnostic_only": true,
+  "raw_database_modified": false,
+  "outputs": [
+    "event_summary.csv",
+    "endpoint_context.csv",
+    "excluded_tickers.csv",
+    "events_not_ready.csv",
+    "summary.json"
+  ]
+}
