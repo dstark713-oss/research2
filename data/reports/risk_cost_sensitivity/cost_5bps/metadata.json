@@ -1,0 +1,20 @@
+{
+  "start_date":"2014-06-09",
+  "end_date":"2026-11-16",
+  "observations":3128,
+  "tickers":[
+    "GAZP",
+    "LKOH",
+    "SBER",
+    "ROSN",
+    "GMKN",
+    "NVTK",
+    "MGNT",
+    "IRAO"
+  ],
+  "cost_bps":5.0,
+  "rebalance_frequency":"M",
+  "weight_execution":"next_observation",
+  "source_database":"C:\\Users\\Danil\\Desktop\\research2\\data\\market_data\\moex_daily_adjusted.sqlite",
+  "database_modified":false
+}
