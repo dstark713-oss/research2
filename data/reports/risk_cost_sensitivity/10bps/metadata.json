@@ -1,0 +1,25 @@
+{
+  "evaluation_start":"2014-06-09",
+  "evaluation_end":"2026-11-16",
+  "observations":3106,
+  "tickers":[
+    "GAZP",
+    "LKOH",
+    "SBER",
+    "ROSN",
+    "GMKN",
+    "NVTK",
+    "MGNT",
+    "IRAO"
+  ],
+  "cost_bps":10.0,
+  "rebalance_frequency":"M",
+  "signal_execution":"signal_at_close_t_applied_after_close_t",
+  "return_timing":"held_weights_earn_return_t_to_t_plus_1",
+  "turnover_definition":"0.5 * sum(abs(target_weights - drifted_weights)); cash included",
+  "initial_deployment_reported_separately":true,
+  "missing_price_policy":"complete_case_no_forward_fill",
+  "signals_use_full_available_history":true,
+  "source_database":"C:\\Users\\Danil\\Desktop\\research2\\data\\market_data\\moex_daily_adjusted.sqlite",
+  "database_modified":false
+}

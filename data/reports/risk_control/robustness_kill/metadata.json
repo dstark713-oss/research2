@@ -1,0 +1,29 @@
+{
+  "experiment": "R05_R06_ROBUSTNESS_KILL_TESTS",
+  "start_date": "2014-06-09",
+  "end_date": "2026-11-16",
+  "observations": 3106,
+  "tickers": [
+    "GAZP",
+    "LKOH",
+    "SBER",
+    "ROSN",
+    "GMKN",
+    "NVTK",
+    "MGNT",
+    "IRAO"
+  ],
+  "primary_cost_bps": 10.0,
+  "cost_scenarios_bps": [
+    10.0,
+    20.0,
+    30.0
+  ],
+  "execution": "daily_after_close",
+  "signal_timing": "signal_at_close_t_applies_to_return_t_plus_1",
+  "turnover": "half_l1_distance_including_cash",
+  "risk_free_rate": 0.0,
+  "sharpe": "raw_sharpe_without_risk_free_subtraction",
+  "parameter_selection": "no_optimization",
+  "database_modified": false
+}
