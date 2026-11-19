@@ -1,28 +1,20 @@
+
 # Path: scripts/risk/run_experiment.py
-# Description: Run the initial portfolio risk-control experiment.
+# Description: Run corrected MOEX portfolio risk-control experiment.
 
 import argparse
-import sys
-
 from pathlib import Path
 
 import pandas as pd
 
-from config import (
-    DB_PATH,
-    OUTPUT_DIR,
-    COST_BPS,
-)
-
+from config import DB_PATH, OUTPUT_DIR, COST_BPS
 from data import load_prices
-
-from common import apply_monthly_rebalance, equal_weights
+from common import apply_monthly_rebalance
 
 from engine import (
     backtest,
     buy_and_hold_weights,
     individual_buy_and_hold_weights,
-    calculate_metrics,
 )
 
 import r01_equal_weight
@@ -51,36 +43,14 @@ STRATEGIES = {
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Run MOEX portfolio risk-control experiment."
+        description="Run corrected MOEX risk-control experiment."
     )
 
-    parser.add_argument(
-        "--db",
-        type=Path,
-        default=DB_PATH,
-    )
-
-    parser.add_argument(
-        "--output",
-        type=Path,
-        default=OUTPUT_DIR,
-    )
-
-    parser.add_argument(
-        "--start-date",
-        default=None,
-    )
-
-    parser.add_argument(
-        "--end-date",
-        default=None,
-    )
-
-    parser.add_argument(
-        "--cost-bps",
-        type=float,
-        default=COST_BPS,
-    )
+    parser.add_argument("--db", type=Path, default=DB_PATH)
+    parser.add_argument("--output", type=Path, default=OUTPUT_DIR)
+    parser.add_argument("--start-date", default=None)
+    parser.add_argument("--end-date", default=None)
+    parser.add_argument("--cost-bps", type=float, default=COST_BPS)
 
     return parser.parse_args()
 
@@ -88,121 +58,116 @@ def parse_args():
 def main():
     args = parse_args()
 
-    prices = load_prices(args.db)
+    # Load the complete available history first.
+    all_prices = load_prices(args.db)
 
-    if args.start_date:
-        prices = prices.loc[
-            prices.index >= pd.Timestamp(args.start_date)
-        ]
-
-    if args.end_date:
-        prices = prices.loc[
-            prices.index <= pd.Timestamp(args.end_date)
-        ]
-
-    if len(prices) < 300:
-        raise RuntimeError(
-            "Insufficient common history. "
-            "At least 300 observations are required."
-        )
-
-    returns = (
-        prices.pct_change()
-        .replace([float("inf"), -float("inf")], float("nan"))
+    all_returns = (
+        all_prices
+        .pct_change(fill_method=None)
+        .replace([float("inf"), float("-inf")], float("nan"))
         .fillna(0.0)
     )
 
-    args.output.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    metrics_rows = []
-    daily_returns = pd.DataFrame(index=prices.index)
-
-    # ---------------------------------------------------------
-    # Baseline 1: Equal-weight Buy & Hold
-    # ---------------------------------------------------------
-
-    bh_weights = buy_and_hold_weights(prices)
-
-    bh_result = backtest(
-        prices,
-        bh_weights,
-        cost_bps=args.cost_bps,
-    )
-
-    metrics_rows.append({
-        "strategy": "BASELINE_EQUAL_WEIGHT_BH",
-        **bh_result["metrics"],
-    })
-
-    daily_returns["BASELINE_EQUAL_WEIGHT_BH"] = (
-        bh_result["returns"]
-    )
-
-    # ---------------------------------------------------------
-    # Baseline 2: Individual Buy & Hold
-    # ---------------------------------------------------------
-
-    for ticker in prices.columns:
-        weights = individual_buy_and_hold_weights(
-            prices,
-            ticker,
-        )
-
-        result = backtest(
-            prices,
-            weights,
-            cost_bps=args.cost_bps,
-        )
-
-        metrics_rows.append({
-            "strategy": f"BUY_HOLD_{ticker}",
-            **result["metrics"],
-        })
-
-        daily_returns[f"BUY_HOLD_{ticker}"] = (
-            result["returns"]
-        )
-
-    # ---------------------------------------------------------
-    # Risk-control strategies
-    # ---------------------------------------------------------
+    # Build all signals on full history to preserve warm-up observations.
+    all_strategy_weights = {}
 
     for name, strategy_function in STRATEGIES.items():
-        print(f"Running {name}...")
+        print(f"Building signals: {name}")
 
-        target_weights = strategy_function(
-            prices,
-            returns,
+        weights = strategy_function(
+            all_prices,
+            all_returns,
         )
 
-        target_weights = apply_monthly_rebalance(
-            target_weights
+        weights = apply_monthly_rebalance(weights)
+
+        all_strategy_weights[name] = weights
+
+    # Select evaluation period only after signals have been calculated.
+    eval_prices = all_prices.copy()
+
+    if args.start_date:
+        eval_prices = eval_prices.loc[
+            eval_prices.index >= pd.Timestamp(args.start_date)
+        ]
+
+    if args.end_date:
+        eval_prices = eval_prices.loc[
+            eval_prices.index <= pd.Timestamp(args.end_date)
+        ]
+
+    if len(eval_prices) < 300:
+        raise RuntimeError(
+            "Insufficient evaluation history. "
+            "At least 300 observations are required."
         )
 
-        result = backtest(
-            prices,
-            target_weights,
-            cost_bps=args.cost_bps,
-        )
+    if args.cost_bps < 0:
+        raise ValueError("--cost-bps cannot be negative.")
 
+    args.output.mkdir(parents=True, exist_ok=True)
+
+    metrics_rows = []
+    daily_returns = pd.DataFrame(index=eval_prices.index)
+    gross_returns = pd.DataFrame(index=eval_prices.index)
+    daily_turnover = pd.DataFrame(index=eval_prices.index)
+    daily_costs = pd.DataFrame(index=eval_prices.index)
+
+    def save_result(name, result):
         metrics_rows.append({
             "strategy": name,
             **result["metrics"],
         })
 
         daily_returns[name] = result["returns"]
+        gross_returns[name] = result["gross_returns"]
+        daily_turnover[name] = result["turnover"]
+        daily_costs[name] = result["costs"]
 
         result["weights"].to_csv(
             args.output / f"weights_{name.lower()}.csv",
             index_label="tradedate",
         )
 
-    # ---------------------------------------------------------
-    # Save outputs
-    # ---------------------------------------------------------
+    # Equal-weight passive Buy & Hold.
+    bh_weights = buy_and_hold_weights(eval_prices)
+
+    bh_result = backtest(
+        eval_prices,
+        bh_weights,
+        cost_bps=args.cost_bps,
+    )
+
+    save_result("BASELINE_EQUAL_WEIGHT_BH", bh_result)
+
+    # Individual passive Buy & Hold baselines.
+    for ticker in eval_prices.columns:
+        weights = individual_buy_and_hold_weights(
+            eval_prices,
+            ticker,
+        )
+
+        result = backtest(
+            eval_prices,
+            weights,
+            cost_bps=args.cost_bps,
+        )
+
+        save_result(f"BUY_HOLD_{ticker}", result)
+
+    # Risk-control strategies.
+    for name, full_weights in all_strategy_weights.items():
+        target_weights = full_weights.reindex(
+            eval_prices.index
+        )
+
+        result = backtest(
+            eval_prices,
+            target_weights,
+            cost_bps=args.cost_bps,
+        )
+
+        save_result(name, result)
 
     metrics = pd.DataFrame(metrics_rows)
 
@@ -221,14 +186,37 @@ def main():
         index_label="tradedate",
     )
 
+    gross_returns.to_csv(
+        args.output / "gross_returns.csv",
+        index_label="tradedate",
+    )
+
+    daily_turnover.to_csv(
+        args.output / "daily_turnover.csv",
+        index_label="tradedate",
+    )
+
+    daily_costs.to_csv(
+        args.output / "daily_costs.csv",
+        index_label="tradedate",
+    )
+
     metadata = {
-        "start_date": str(prices.index.min().date()),
-        "end_date": str(prices.index.max().date()),
-        "observations": len(prices),
-        "tickers": list(prices.columns),
+        "evaluation_start": str(eval_prices.index.min().date()),
+        "evaluation_end": str(eval_prices.index.max().date()),
+        "observations": len(eval_prices),
+        "tickers": list(eval_prices.columns),
         "cost_bps": args.cost_bps,
         "rebalance_frequency": "M",
-        "weight_execution": "next_observation",
+        "signal_execution": "signal_at_close_t_applied_after_close_t",
+        "return_timing": "held_weights_earn_return_t_to_t_plus_1",
+        "turnover_definition": (
+            "0.5 * sum(abs(target_weights - drifted_weights)); "
+            "cash included"
+        ),
+        "initial_deployment_reported_separately": True,
+        "missing_price_policy": "complete_case_no_forward_fill",
+        "signals_use_full_available_history": True,
         "source_database": str(args.db),
         "database_modified": False,
     }
@@ -239,12 +227,21 @@ def main():
         indent=2,
     )
 
+    display_columns = [
+        "strategy",
+        "CAGR",
+        "Sharpe",
+        "MDD",
+        "annualized_turnover",
+        "initial_turnover",
+        "average_exposure",
+        "average_cash",
+        "total_cost_fraction_sum",
+    ]
+
     print("\nRESULTS")
     print(
-        metrics[
-            ["strategy", "CAGR", "Sharpe", "MDD",
-             "annualized_turnover", "average_exposure"]
-        ].to_string(index=False)
+        metrics[display_columns].to_string(index=False)
     )
 
     print(f"\nReports saved to: {args.output}")

@@ -1,5 +1,6 @@
+
 # Path: scripts/risk/data.py
-# Description: Load adjusted MOEX prices from SQLite without modifying source data.
+# Description: Load adjusted MOEX prices without forward-filling missing observations.
 
 import sqlite3
 from pathlib import Path
@@ -14,10 +15,8 @@ def connect_readonly(db_path: Path):
         raise FileNotFoundError(f"Database not found: {db_path}")
 
     uri = db_path.resolve().as_uri() + "?mode=ro"
-
     connection = sqlite3.connect(uri, uri=True)
     connection.execute("PRAGMA query_only = ON")
-
     return connection
 
 
@@ -43,18 +42,15 @@ def find_price_table(connection):
             f'PRAGMA table_info("{table_name}")'
         ).fetchall()
 
-        available = {
-            row[1].lower()
-            for row in columns
-        }
+        available = {row[1].lower() for row in columns}
 
         if required.issubset(available):
             candidates.append(table_name)
 
     if not candidates:
         raise RuntimeError(
-            "No table found with SECID, TRADEDATE, "
-            "ADJUSTED_CLOSE, BOARDID and NUMTRADES."
+            "No table found with SECID, TRADEDATE, ADJUSTED_CLOSE, "
+            "BOARDID and NUMTRADES."
         )
 
     if len(candidates) > 1:
@@ -101,12 +97,10 @@ def load_prices(db_path=DB_PATH):
             ORDER BY tradedate, secid
         """
 
-        params = list(TICKERS) + list(APPROVED_BOARDS)
-
         rows = pd.read_sql_query(
             sql,
             connection,
-            params=params,
+            params=list(TICKERS) + list(APPROVED_BOARDS),
         )
 
     finally:
@@ -117,12 +111,7 @@ def load_prices(db_path=DB_PATH):
 
     rows["tradedate"] = pd.to_datetime(rows["tradedate"])
 
-    # Prefer TQBR when both approved boards have active records.
-    board_priority = {
-        "TQBR": 0,
-        "EQBR": 1,
-    }
-
+    board_priority = {"TQBR": 0, "EQBR": 1}
     rows["board_priority"] = rows["boardid"].map(board_priority)
 
     rows = rows.sort_values(
@@ -140,29 +129,26 @@ def load_prices(db_path=DB_PATH):
         values="adjusted_close",
     )
 
-    prices = prices.reindex(columns=TICKERS)
-    prices = prices.sort_index()
+    prices = prices.reindex(columns=TICKERS).sort_index()
 
-    missing = [
+    missing_tickers = [
         ticker for ticker in TICKERS
         if ticker not in prices.columns
         or prices[ticker].notna().sum() == 0
     ]
 
-    if missing:
+    if missing_tickers:
         raise RuntimeError(
-            f"No usable history for tickers: {missing}"
+            f"No usable history for tickers: {missing_tickers}"
         )
 
     first_dates = prices.apply(
         lambda column: column.first_valid_index()
     )
-
     last_dates = prices.apply(
         lambda column: column.last_valid_index()
     )
 
-    # Use a common observation period for all eight securities.
     common_start = max(first_dates)
     common_end = min(last_dates)
 
@@ -171,19 +157,34 @@ def load_prices(db_path=DB_PATH):
         & (prices.index <= common_end)
     ]
 
-    # Forward fill is used only for portfolio mark-to-market.
-    # It does not modify the source database.
-    prices = prices.ffill()
+    candidate_dates = len(prices)
+    missing_cells = int(prices.isna().sum().sum())
+    incomplete_dates = int(prices.isna().any(axis=1).sum())
 
+    # Strict complete-case panel. No synthetic stale-price returns.
     prices = prices.dropna(how="any")
 
     if prices.empty:
-        raise RuntimeError("Common price history is empty.")
+        raise RuntimeError(
+            "No complete-case observations remain for the basket."
+        )
+
+    if (prices <= 0).any().any():
+        raise RuntimeError("Non-positive prices found after filtering.")
 
     print(f"Source table: {table}")
     print(f"Tickers: {len(TICKERS)}")
-    print(f"Common period: {prices.index.min().date()} "
-          f"- {prices.index.max().date()}")
-    print(f"Observations: {len(prices):,}")
+    print(
+        f"Common date envelope: {common_start.date()} - "
+        f"{common_end.date()}"
+    )
+    print(f"Candidate dates: {candidate_dates:,}")
+    print(f"Dates removed due to missing prices: {incomplete_dates:,}")
+    print(f"Missing price cells: {missing_cells:,}")
+    print(
+        f"Complete-case period: {prices.index.min().date()} - "
+        f"{prices.index.max().date()}"
+    )
+    print(f"Complete observations: {len(prices):,}")
 
     return prices

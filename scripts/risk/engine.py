@@ -1,5 +1,6 @@
+
 # Path: scripts/risk/engine.py
-# Description: Portfolio backtesting engine and performance metrics.
+# Description: Backtest engine with drift-aware turnover and transaction costs.
 
 import numpy as np
 import pandas as pd
@@ -7,7 +8,35 @@ import pandas as pd
 from config import TRADING_DAYS
 
 
-def calculate_metrics(returns, turnover=None, weights=None):
+CASH_COLUMN = "__CASH__"
+
+
+def prepare_target_weights(weights, index, columns):
+    target = weights.reindex(
+        index=index,
+        columns=columns,
+    ).fillna(0.0)
+
+    target = target.clip(lower=0.0)
+
+    row_sums = target.sum(axis=1)
+    scale = row_sums.where(row_sums > 1.0, 1.0)
+
+    target = target.div(scale, axis=0)
+
+    target[CASH_COLUMN] = (
+        1.0 - target.sum(axis=1)
+    ).clip(lower=0.0)
+
+    return target
+
+
+def calculate_metrics(
+    returns,
+    turnover=None,
+    weights=None,
+    costs=None,
+):
     returns = returns.dropna()
 
     if returns.empty:
@@ -33,91 +62,195 @@ def calculate_metrics(returns, turnover=None, weights=None):
     )
 
     drawdown = equity / equity.cummax() - 1.0
-    mdd = drawdown.min()
 
     result = {
         "observations": len(returns),
         "CAGR": cagr,
         "Sharpe": sharpe,
-        "MDD": mdd,
+        "MDD": drawdown.min(),
         "annualized_volatility": volatility * np.sqrt(TRADING_DAYS),
         "total_return": equity.iloc[-1] - 1.0,
     }
 
     if turnover is not None:
+        # Exclude initial deployment from recurring turnover.
+        recurring_turnover = turnover.iloc[1:]
+
+        result["initial_turnover"] = (
+            float(turnover.iloc[0]) if len(turnover) else 0.0
+        )
+
+        result["total_turnover_ex_initial"] = (
+            float(recurring_turnover.sum())
+        )
+
         result["annualized_turnover"] = (
-            turnover.mean() * TRADING_DAYS
+            float(recurring_turnover.sum() / years)
+            if years > 0 else np.nan
         )
 
     if weights is not None:
-        result["average_exposure"] = weights.sum(axis=1).mean()
+        risky_weights = weights.drop(
+            columns=[CASH_COLUMN],
+            errors="ignore",
+        )
+
+        result["average_exposure"] = (
+            risky_weights.sum(axis=1).mean()
+        )
+
+        result["average_cash"] = (
+            1.0 - result["average_exposure"]
+        )
+
+    if costs is not None:
+        result["total_cost_fraction_sum"] = float(costs.sum())
+        result["average_daily_cost"] = float(costs.mean())
 
     return result
 
 
 def backtest(prices, weights, cost_bps=10.0):
     """
-    Weights calculated at close t are applied to returns at t+1.
-    This prevents same-day look-ahead.
+    Signals at close t determine target weights at close t.
+    Those holdings earn returns from t to t+1.
 
-    Turnover is the sum of absolute weight changes.
-    Costs are charged on the next observation after a rebalance.
+    At each close:
+      1. Existing holdings earn the observed daily return.
+      2. Holdings drift with relative asset performance.
+      3. Drifted weights are compared with target weights.
+      4. Transaction costs are charged on actual traded notional.
+      5. Target weights become holdings for the next observation.
+
+    Turnover is one-way traded notional:
+        0.5 * sum(abs(target_weight - drifted_weight))
+
+    Cash is an explicit portfolio component.
     """
-    returns = prices.pct_change().replace(
-        [np.inf, -np.inf],
-        np.nan,
-    ).fillna(0.0)
 
-    weights = weights.reindex(
-        index=prices.index,
-        columns=prices.columns,
-    ).fillna(0.0)
+    if cost_bps < 0:
+        raise ValueError("cost_bps cannot be negative.")
 
-    # No leverage in the initial experiment.
-    weights = weights.clip(lower=0.0)
+    if prices.empty:
+        raise ValueError("Prices are empty.")
 
-    row_sums = weights.sum(axis=1)
-    weights = weights.div(
-        row_sums.where(row_sums > 1.0, 1.0),
-        axis=0,
+    if prices.isna().any().any():
+        raise ValueError(
+            "Prices contain missing values. "
+            "The engine requires a complete-case price panel."
+        )
+
+    asset_returns = prices.pct_change(fill_method=None)
+
+    # No return is earned before the first portfolio deployment.
+    asset_returns.iloc[0] = 0.0
+
+    if asset_returns.isna().any().any():
+        raise RuntimeError(
+            "Unexpected missing returns after complete-case filtering."
+        )
+
+    target = prepare_target_weights(
+        weights,
+        prices.index,
+        prices.columns,
     )
 
-    held_weights = weights.shift(1).fillna(0.0)
+    n = len(prices)
+    asset_columns = list(prices.columns)
+    full_columns = asset_columns + [CASH_COLUMN]
 
-    gross_returns = (
-        held_weights * returns
-    ).sum(axis=1)
+    current = pd.Series(
+        0.0,
+        index=full_columns,
+    )
+    current[CASH_COLUMN] = 1.0
 
-    turnover = weights.diff().abs().sum(axis=1)
-    turnover.iloc[0] = weights.iloc[0].abs().sum()
+    gross_returns = pd.Series(0.0, index=prices.index)
+    net_returns = pd.Series(0.0, index=prices.index)
+    turnover = pd.Series(0.0, index=prices.index)
+    costs = pd.Series(0.0, index=prices.index)
 
-    trading_costs = (
-        turnover * cost_bps / 10000.0
-    ).shift(1).fillna(0.0)
+    for i, date in enumerate(prices.index):
+        daily_asset_returns = asset_returns.loc[date]
 
-    net_returns = gross_returns - trading_costs
+        # Existing holdings earn today's market return.
+        gross_return = float(
+            (current[asset_columns] * daily_asset_returns).sum()
+        )
+
+        if gross_return <= -1.0:
+            raise RuntimeError(
+                f"Portfolio return <= -100% on {date.date()}."
+            )
+
+        gross_returns.loc[date] = gross_return
+
+        # Drift current holdings to post-market weights.
+        denominator = 1.0 + gross_return
+
+        drifted = current.copy()
+
+        drifted[asset_columns] = (
+            current[asset_columns]
+            * (1.0 + daily_asset_returns)
+            / denominator
+        )
+
+        drifted[CASH_COLUMN] = (
+            current[CASH_COLUMN] / denominator
+        )
+
+        # Trade from actual drifted holdings to target holdings.
+        desired = target.loc[date, full_columns]
+
+        traded_notional = 0.5 * float(
+            (desired - drifted).abs().sum()
+        )
+
+        turnover.loc[date] = traded_notional
+
+        cost_rate = cost_bps / 10000.0
+        cost_fraction = (
+            (1.0 + gross_return)
+            * cost_rate
+            * traded_notional
+        )
+
+        costs.loc[date] = cost_fraction
+
+        net_return = gross_return - cost_fraction
+        net_returns.loc[date] = net_return
+
+        # Rebalanced holdings earn the next observation's return.
+        current = desired.copy()
 
     metrics = calculate_metrics(
         net_returns,
         turnover=turnover,
-        weights=weights,
+        weights=target,
+        costs=costs,
     )
 
     return {
         "returns": net_returns,
         "gross_returns": gross_returns,
         "turnover": turnover,
-        "costs": trading_costs,
-        "weights": weights,
+        "costs": costs,
+        "weights": target,
         "metrics": metrics,
     }
 
 
 def buy_and_hold_weights(prices):
     """
-    Equal initial capital, fixed number of shares thereafter.
-    Portfolio weights drift naturally with relative prices.
+    Equal initial capital, fixed share quantities thereafter.
+    Weights drift naturally with relative prices.
     """
+
+    if prices.empty:
+        raise ValueError("Prices are empty.")
+
     initial_prices = prices.iloc[0]
 
     shares = (
@@ -133,6 +266,9 @@ def buy_and_hold_weights(prices):
 
 
 def individual_buy_and_hold_weights(prices, ticker):
+    if ticker not in prices.columns:
+        raise KeyError(f"Unknown ticker: {ticker}")
+
     weights = pd.DataFrame(
         0.0,
         index=prices.index,
