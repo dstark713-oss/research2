@@ -1,0 +1,83 @@
+{
+  "created_at_utc": "2026-11-20T14:33:48.557924+00:00",
+  "source": {
+    "database_size": 645201920,
+    "database_mtime_ns": 1795028987619193100,
+    "membership_size": 1734553,
+    "membership_mtime_ns": 1795184702948737900
+  },
+  "config": {
+    "pipeline_version": "1.0.0",
+    "start_date": "2005-01-01",
+    "boards": [
+      "TQBR",
+      "EQBR"
+    ],
+    "excluded_tickers": [
+      "GAZC",
+      "GAZS",
+      "GAZT"
+    ],
+    "suspension_start": "2022-02-28",
+    "suspension_end": "2022-03-23",
+    "rolling_windows": [
+      5,
+      20,
+      60
+    ]
+  },
+  "rows": 197688,
+  "tickers": 207,
+  "dates": 5420,
+  "columns": [
+    "tradedate",
+    "secid",
+    "value_60d",
+    "rank",
+    "universe_size",
+    "selection_method",
+    "volume",
+    "value",
+    "n_boards",
+    "adjusted_open",
+    "adjusted_high",
+    "adjusted_low",
+    "adjusted_close",
+    "price_board",
+    "bar_available",
+    "return_1d",
+    "abs_return",
+    "squared_return",
+    "high_low_range",
+    "open_close_body",
+    "overnight_gap",
+    "log_volume",
+    "log_value",
+    "rv_5",
+    "rv_20",
+    "mean_abs_return_5",
+    "mean_abs_return_20",
+    "value_sum_20",
+    "value_mean_20",
+    "volume_sum_20",
+    "volume_mean_20",
+    "value_sum_60",
+    "value_mean_60",
+    "volume_sum_60",
+    "volume_mean_60",
+    "value_to_median_20",
+    "zero_value_share_20",
+    "zero_volume_share_20",
+    "feature_source_available"
+  ],
+  "smoke_tests": {
+    "non_empty": true,
+    "unique_date_ticker": true,
+    "membership_row_count_preserved": true,
+    "no_excluded_tickers": true,
+    "universe_size_limit": "True",
+    "date_minimum": true,
+    "required_features_present": true,
+    "no_infinite_numeric_values": true
+  }
+}

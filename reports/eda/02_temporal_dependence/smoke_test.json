@@ -1,0 +1,19 @@
+{
+  "status": "PASS",
+  "checks": {
+    "panel_not_empty": true,
+    "unique_ticker_date": true,
+    "acf_output_created": true,
+    "acf_lag_output_created": true,
+    "ljung_box_output_created": true,
+    "hurst_output_created": true,
+    "acf_values_finite_or_null": true
+  },
+  "failed_checks": [],
+  "panel_rows": 197688,
+  "tickers": 207,
+  "acf_ticker_series": 555,
+  "acf_lag_rows": 22200,
+  "ljung_box_rows": 2220,
+  "hurst_rows": 261
+}

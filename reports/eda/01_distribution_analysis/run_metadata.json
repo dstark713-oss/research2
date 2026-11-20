@@ -1,0 +1,41 @@
+{
+  "source_database": "C:\\Users\\Danil\\Desktop\\research2\\data\\market_data\\moex_daily_adjusted.sqlite",
+  "source_table": "adjusted_daily_bars",
+  "resolved_columns": {
+    "secid": "secid",
+    "tradedate": "tradedate",
+    "open": "adjusted_open",
+    "high": "adjusted_high",
+    "low": "adjusted_low",
+    "close": "adjusted_close",
+    "volume": "adjusted_volume",
+    "value": "value",
+    "boardid": "boardid"
+  },
+  "start_date": "1997-03-24",
+  "end_date": "2026-11-16",
+  "market_calendar_dates": 7296,
+  "tickers": 417,
+  "source_rows_after_board_filter_and_dedup": 726518,
+  "variables_analyzed": [
+    "returns",
+    "absolute_returns",
+    "squared_returns",
+    "high_low_range",
+    "open_close_body",
+    "overnight_gap",
+    "volume",
+    "log_volume",
+    "traded_value",
+    "log_traded_value"
+  ],
+  "approved_boards": [
+    "EQBR",
+    "TQBR"
+  ],
+  "numtrades_used": false,
+  "forward_fill_used": false,
+  "outlier_removal_used": false,
+  "database_modified": false,
+  "random_seed": 20261120
+}
